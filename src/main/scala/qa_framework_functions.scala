@@ -14,11 +14,7 @@ object qa_framework_functions {
 		}
 		return df_val
 	}
-<<<<<<< HEAD
-	def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String) : String ={
-=======
 def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String) : String ={
->>>>>>> ba4328cbef2524abecf19809ac12bc9673c47d5e
 		if (variance_tolerance_limit.toInt==100 && kpi_val<=0.0){
 			return "Failed"
 		}
