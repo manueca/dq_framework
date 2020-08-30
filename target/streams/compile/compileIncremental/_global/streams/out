@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [0m[[0m[0mdebug[0m] [0m[0m[0m
 [0m[[0m[0mdebug[0m] [0m[0mInitial source changes: [0m
 [0m[[0m[0mdebug[0m] [0m[0m	removed:Set(/Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/src/main/scala/qa_framework_functions.scala, /Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/src/main/scala/qa_framework_main.scala, /Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/src/main/scala/SparkWordCount.scala, /Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/src/main/scala/Calculator.scala)[0m
@@ -33,3 +34,6 @@
 [0m[[0m[0mdebug[0m] [0m[0mPreviously invalidated, but (transitively) depend on new invalidations:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Set()[0m
 [0m[[0m[0mdebug[0m] [0m[0mNo classes were invalidated.[0m
+=======
+[0m[[0m[0mdebug[0m] [0m[0mNo changes[0m
+>>>>>>> ba4328cbef2524abecf19809ac12bc9673c47d5e

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/target/scala-2.11/qaframework_2.11-1.0.11.jar ...[0m
 [0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	qa_framework_main.class[0m
@@ -51,3 +52,6 @@
 [0m[[0m[0mdebug[0m] [0m[0m	SparkWordCount$$anonfun$1.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/target/scala-2.11/classes/SparkWordCount$$anonfun$1.class[0m
 [0m[[0m[0mdebug[0m] [0m[0mDone packaging.[0m
+=======
+[0m[[0m[0mdebug[0m] [0m[0mJar uptodate: /Users/jcher2/Documents/test2/dq_framework/target/scala-2.11/qaframework_2.11-1.0.11.jar[0m
+>>>>>>> ba4328cbef2524abecf19809ac12bc9673c47d5e
