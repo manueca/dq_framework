@@ -1,1 +1,4 @@
 project/
+target/streams/
+target/test-reports/
+target/scala-2.11/update
