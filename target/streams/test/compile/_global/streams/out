@@ -1,0 +1,6 @@
+[0m[[0m[31merror[0m] [0m[0m/Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/src/test/scala/Testqa_framework_functions.scala:28:112: type mismatch;[0m
+[0m[[0m[31merror[0m] [0m[0m found   : Int[0m
+[0m[[0m[31merror[0m] [0m[0m required: String[0m
+[0m[[0m[31merror[0m] [0m[0m    assertResult(out)(qa_framework_functions.calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String))[0m
+[0m[[0m[31merror[0m] [0m[0m                                                                                                               ^[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m
