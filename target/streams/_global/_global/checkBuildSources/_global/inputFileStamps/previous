@@ -1,1 +1,1 @@
-["sbt.Task[scala.collection.Seq[scala.Tuple2[java.nio.file.Path, sbt.nio.FileStamp]]]",{"hashes":[["/Users/jcher2/Documents/qa_framework/data_quality_framework/qa-framework-scala/build.sbt","5af79f048a756573f19a615a15aab7be2b224ddb"]],"lastModifiedTimes":[]}]
+["sbt.Task[scala.collection.Seq[scala.Tuple2[java.nio.file.Path, sbt.nio.FileStamp]]]",{"hashes":[["/Users/jcher2/Documents/data_quality_framework/data_quality_framework/dq_framework/build.sbt","5af79f048a756573f19a615a15aab7be2b224ddb"]],"lastModifiedTimes":[]}]
