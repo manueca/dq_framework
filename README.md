@@ -2,7 +2,7 @@
 
 ## Definition
 ---------------
-This repository consists of all the artifacts related dq-meter code and related artifcats.
+This repository consists of all the artifacts related dq-framework code and related artifcats.
 
 Define the process flow for the quality framework
 Explain the technical stack and process flow   used.
