@@ -32,3 +32,13 @@ Calculate the average over a period of an year and check if the captured metric 
 Calculate the standard deviation  over last year,last month,last quarter and last week  and check if the captured metric is within tolerance limit or not.
 Calculate the forecasted value using SARIMA model and  check if the captured metric is within tolerance limit or not.
 Tie back the metrics with source table using the concept of parent id.
+
+Functionalities meant to achieve 
+
+- Row count validations - Ingest
+- Duplicate checks - Ingest
+- Key kpi validations for all critical tables - Ingest/Curate
+- Forecasting based on time and seasons - Ingest
+- Null/value check for important fields in each table - Ingest
+- Anomaly or 'out-of-bounds/range' value detection - Ingest
+
