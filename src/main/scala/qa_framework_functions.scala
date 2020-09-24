@@ -3,6 +3,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import org.apache.log4j.{Level, Logger}
 
 object qa_framework_functions {
 	def get_kpi_val(spark:SparkSession,query:String,environment:String) : Double ={
@@ -25,7 +26,7 @@ object qa_framework_functions {
 			if (parent_id.length >1){
 				var parent_id_val=spark.sql(s"""select cast(coalesce(kpi_val,0.0) as double) as kpi_val from dev_eda_common.mpa_audit_metric_table  where id='$parent_id' and process_dt='$dag_exec_dt'""").first().getAs[Double](0)
 				if (parent_id_val != kpi_val && variance_tolerance_limit.toInt >0 ){
-				
+
 						if (((Math.abs(kpi_val - parent_id_val)/parent_id_val) *100)>variance_tolerance_limit.toInt && variance_tolerance_limit.toInt != 0 ){
 								return "Failed"
 						}
@@ -96,9 +97,10 @@ object qa_framework_functions {
 	 												 coalesce(query,''),
 	 												 coalesce(parent_id,''),
 	 												 coalesce(team_name,'')
-	 										from eda_common.eda_quality_framework_config_ddb
+	 										from dev_eda_common.eda_quality_framework_config_ddb
 	 										where id='$id'""").collect()
 
+		println (reslt_without_query)
 	 	val table_name = reslt_without_query.map(x => x.get(0)).mkString(",")
 	 	var season_flag = reslt_without_query.map(x => x.get(1)).mkString(",")
 	 	val kpi = reslt_without_query.map(x => x.get(2)).mkString(",")
