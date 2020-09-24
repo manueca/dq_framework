@@ -14,22 +14,28 @@ object qa_framework_functions {
 		}
 		return df_val
 	}
-def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String) : String ={
-		if (variance_tolerance_limit.toInt==100 && kpi_val<=0.0){
-			return "Failed"
-		}
-		if ( ( ((Math.abs(kpi_val - kpi_avg)/kpi_avg) *100) > variance_tolerance_limit.toInt) ){
-			print ("inside 1")
-			return "Failed"
-		}
-		if (parent_id.length >1){	
-			var parent_id_val=spark.sql(s"""select cast(coalesce(kpi_val,0.0) as double) as kpi_val from dev_eda_common.mpa_audit_metric_table  where id='$parent_id' and process_dt='$dag_exec_dt'""").first().getAs[Double](0)
-			if (parent_id_val != kpi_val){
+	def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String) : String ={
+			if (variance_tolerance_limit.toInt==100 && kpi_val<=0.0){
 				return "Failed"
 			}
+			if ( ( ((Math.abs(kpi_val - kpi_avg)/kpi_avg) *100) > variance_tolerance_limit.toInt) ){
+				print ("inside 1")
+				return "Failed"
+			}
+			if (parent_id.length >1){
+				var parent_id_val=spark.sql(s"""select cast(coalesce(kpi_val,0.0) as double) as kpi_val from dev_eda_common.mpa_audit_metric_table  where id='$parent_id' and process_dt='$dag_exec_dt'""").first().getAs[Double](0)
+				if (parent_id_val != kpi_val && variance_tolerance_limit.toInt >0 ){
+				
+						if (((Math.abs(kpi_val - parent_id_val)/parent_id_val) *100)>variance_tolerance_limit.toInt && variance_tolerance_limit.toInt != 0 ){
+								return "Failed"
+						}
+				}
+				if (parent_id_val != kpi_val && variance_tolerance_limit.toInt == 0 ){
+					return "Failed"
+				}
+			}
+			return "Success"
 		}
-		return "Success"
-	}
 
 	def get_average(spark:SparkSession,season_flg:String,id:String,dag_exec_dt:String) : Double ={
 		var kpi_avg=0
@@ -57,14 +63,14 @@ def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_t
 			print ("\n id is :  "+mod_compar_dt,id)
 
 			var kpi_avg=spark.sql(s"""select cast(coalesce(avg(coalesce(kpi_val,0.0)),0.0) as double) as kpi_val
-									 from 
-									   dev_eda_common.mpa_audit_metric_table  
+									 from
+									   dev_eda_common.mpa_audit_metric_table
 									   where id='$id' and process_dt >= '$mod_compar_dt'""").first().getAs[Double](0)
 			print ("\n kpi_avg is "+kpi_avg)
 			/*
 			var kpi_avg1=spark.sql(s"""select cast(coalesce(avg(coalesce(kpi_val,0.0)),0.0) as double) as kpi_val
-									 from 
-									   dev_eda_common.mpa_audit_metric_table  
+									 from
+									   dev_eda_common.mpa_audit_metric_table
 									   where id='a20191108200253_54ed432e_2dd7_4358_a7z' """).first().getAs[Double](0)
 			*/
 			if (kpi_avg >0){
@@ -90,9 +96,9 @@ def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_t
 	 												 coalesce(query,''),
 	 												 coalesce(parent_id,''),
 	 												 coalesce(team_name,'')
-	 										from eda_common.eda_quality_framework_config_ddb 
+	 										from eda_common.eda_quality_framework_config_ddb
 	 										where id='$id'""").collect()
-	 	
+
 	 	val table_name = reslt_without_query.map(x => x.get(0)).mkString(",")
 	 	var season_flag = reslt_without_query.map(x => x.get(1)).mkString(",")
 	 	val kpi = reslt_without_query.map(x => x.get(2)).mkString(",")
@@ -117,7 +123,7 @@ def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_t
 	 	if (full_tbl_scan=='Y'){
 	 		query = "select cast("+kpi+" as double) as kpi_val from "+table_name
 	 	}
-	 	
+
 	 	if (condition_to_check.length >1 && partition_col_nm.length <=1 && full_tbl_scan !='Y' ) {
 	 		query = "select cast("+kpi+" as double) as kpi_val  from "+table_name+" where "+condition_to_check
 	 		print ("\n  inside where condition to check \n")
