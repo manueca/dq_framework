@@ -6,7 +6,9 @@ import java.time.format.DateTimeFormatter
 import org.apache.log4j.{Level, Logger}
 
 object qa_framework_functions {
-	def get_kpi_val(spark:SparkSession,query:String,environment:String) : Double ={
+	val log = Logger.getLogger(getClass.getName)
+
+	def getKpiValue(spark:SparkSession,query:String,environment:String) : Double ={
 		var df_val=0.0
 		if (environment.toLowerCase()=="hive"){
 			var df_val=spark.sql(query).first().getAs[Double](0)
@@ -15,12 +17,24 @@ object qa_framework_functions {
 		}
 		return df_val
 	}
-	def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String) : String ={
+	def getKpiValueNew(spark:SparkSession,query:String,environment:String) : DataFrame ={
+		var df_val=spark.sql(s"""select 'test'""")
+		if (environment.toLowerCase()=="hive"){
+			var df_val=spark.sql(query)
+		}else{
+			var df_val=spark.sql(query)
+		}
+		return df_val
+	}
+
+
+	def calculate_status(spark:SparkSession,kpi_val:Double,kpi_avg:Double,variance_tolerance_limit:String,dag_exec_dt:String,parent_id:String,model_type:String,variance_percentage:String) : String ={
 			if (variance_tolerance_limit.toInt==100 && kpi_val<=0.0){
 				return "Failed"
 			}
 			if ( ( ((Math.abs(kpi_val - kpi_avg)/kpi_avg) *100) > variance_tolerance_limit.toInt) ){
 				print ("inside 1")
+				log.info(s"Returning failure because of kpi_average   variance $kpi_avg is greater than tolerance limit $variance_tolerance_limit compared to kpi value")
 				return "Failed"
 			}
 			if (parent_id.length >1){
@@ -28,17 +42,27 @@ object qa_framework_functions {
 				if (parent_id_val != kpi_val && variance_tolerance_limit.toInt >0 ){
 
 						if (((Math.abs(kpi_val - parent_id_val)/parent_id_val) *100)>variance_tolerance_limit.toInt && variance_tolerance_limit.toInt != 0 ){
+								log.info(s"Returning failure because of parent id  variance $parent_id_val is greater than tolerance limit $variance_tolerance_limit compared to kpi value")
 								return "Failed"
 						}
 				}
 				if (parent_id_val != kpi_val && variance_tolerance_limit.toInt == 0 ){
+					log.info(s"Returning failure because of parent id value not equal to kpi value")
 					return "Failed"
 				}
+			}
+			if (variance_percentage > variance_tolerance_limit && model_type.length()>0 ){
+					log.info(s"Returning failure because of prediction variance $variance_percentage is greater than tolerance limit $variance_tolerance_limit ")
+					return "Failed"
 			}
 			return "Success"
 		}
 
-	def get_average(spark:SparkSession,season_flg:String,id:String,dag_exec_dt:String) : Double ={
+	def get_average(spark:SparkSession,
+									season_flg:String,
+									id:String,
+									dag_exec_dt:String,
+									audit_metric_table:DataFrame) : Double ={
 		var kpi_avg=0
 		var ret_kpi_avg=0.0
 		print ("\n before check ")
@@ -65,15 +89,9 @@ object qa_framework_functions {
 
 			var kpi_avg=spark.sql(s"""select cast(coalesce(avg(coalesce(kpi_val,0.0)),0.0) as double) as kpi_val
 									 from
-									   dev_eda_common.mpa_audit_metric_table
+									   audit_metric_table
 									   where id='$id' and process_dt >= '$mod_compar_dt'""").first().getAs[Double](0)
-			print ("\n kpi_avg is "+kpi_avg)
-			/*
-			var kpi_avg1=spark.sql(s"""select cast(coalesce(avg(coalesce(kpi_val,0.0)),0.0) as double) as kpi_val
-									 from
-									   dev_eda_common.mpa_audit_metric_table
-									   where id='a20191108200253_54ed432e_2dd7_4358_a7z' """).first().getAs[Double](0)
-			*/
+			print (s"""\n kpi_avg for id $id is $kpi_avg""")
 			if (kpi_avg >0){
 				 ret_kpi_avg=kpi_avg
 			} else{
@@ -84,7 +102,7 @@ object qa_framework_functions {
 		return ret_kpi_avg
 	}
 
-	def quality_parameter_extraction( spark:SparkSession,id:String ,dag_exec_dt:String) : (String, String, String, String, String, String, String, String, String, String, String,String,String)  = {
+	def qualityParameterExtraction( spark:SparkSession,id:String ,dag_exec_dt:String,audit_metric_table:DataFrame) : (String, String, String, String, String, String, String, String, String, String, String,String,String)  = {
 	 	val reslt_without_query=spark.sql(s"""select coalesce(table_name,''),
 	 												 coalesce(season_flag,''),
 	 												 coalesce(kpi,''),
@@ -97,7 +115,7 @@ object qa_framework_functions {
 	 												 coalesce(query,''),
 	 												 coalesce(parent_id,''),
 	 												 coalesce(team_name,'')
-	 										from dev_eda_common.eda_quality_framework_config_ddb
+	 										from audit_metric_table
 	 										where id='$id'""").collect()
 
 		println (reslt_without_query)
@@ -119,27 +137,31 @@ object qa_framework_functions {
 		print ("\n  condition_to_check IS :"+condition_to_check)
 		print ("\n  After condition to check")
 	 	var query = "select cast("+kpi+" as double) as kpi_val from "+table_name
-	 	full_tbl_scan="Y"
-	 	season_flag="100"
+		var df=spark.sql(s"""select '$table_name'""")
 	 	print ("\n  full_tbl_scan IS :"+full_tbl_scan)
 	 	if (full_tbl_scan=='Y'){
-	 		query = "select cast("+kpi+" as double) as kpi_val from "+table_name
-	 	}
+			df=spark.sql(s"""select * from $table_name""").cache()
+	 		query = s"""select '$id' as id,'$dag_exec_dt' as process_dt, cast("+kpi+" as double) as kpi_val from df"""
+	 	}else{
+			df=spark.sql(s"""select * from $table_name where $partition_col_nm >='$dag_exec_dt'""").cache()
+		}
 
-	 	if (condition_to_check.length >1 && partition_col_nm.length <=1 && full_tbl_scan !='Y' ) {
-	 		query = "select cast("+kpi+" as double) as kpi_val  from "+table_name+" where "+condition_to_check
+	 	if (condition_to_check.length >1 && partition_col_nm.length <=0 && full_tbl_scan !='Y' ) {
+
+	 		query = "select '$id' as id,'$dag_exec_dt' as process_dt,cast("+kpi+" as double) as kpi_val  from df where "+condition_to_check
 	 		print ("\n  inside where condition to check \n")
 	 		}
 	 	print ("partition_col_nm.length :"+partition_col_nm.length ,"full_tbl_scan:"+full_tbl_scan)
 
 	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length >1 ){
-	 		query = "select cast("+kpi+" as double) as kpi_val from "+table_name+" where "+condition_to_check+"and "+partition_col_nm+" = '"+dag_exec_dt+"'"
+
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val from df where $condition_to_check and $partition_col_nm = '$dag_exec_dt'"""
 	 		print ("\n  inside where condition to check and partition column condition \n")
 
 	 	}
-	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length <=1 ){
+	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length <=0 ){
 
-	 		query = "select cast("+kpi+"  as double) as kpi_val from "+table_name+" where  "+partition_col_nm+" = '"+dag_exec_dt+"'"
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast("+kpi+"  as double) as kpi_val from $table_name where  $partition_col_nm = '$dag_exec_dt'"""
 	 		print ("\n  inside partition column condition \n")
 	 	}
 	 	else{

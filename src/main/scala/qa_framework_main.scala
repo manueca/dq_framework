@@ -1,4 +1,4 @@
-//spark-submit --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0 --master local[2] --deploy-mode "client" --class "qa_framework_main" qaframework_2.11-1.0.11.jar N Y
+//spark-submit --deploy-mode cluster --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0  --class "qa_framework_main" qaframework_2.11-1.0.11.jar Y N
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
@@ -8,6 +8,7 @@ import qa_framework_functions._
 import qa_framework_transform._
 import qa_framework_initialize._
 import org.apache.log4j.{Level, Logger}
+import com.typesafe.config._
 
 object qa_framework_main {
 	val log = Logger.getLogger(getClass.getName)
@@ -16,54 +17,72 @@ object qa_framework_main {
 		log.info(s"Inside the Main Function")
 		println (s"Inside the Main Function")
 		var spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-		spark.sparkContext.setLogLevel("WARN")
+		spark.sparkContext.setLogLevel("INFO")
 		spark.conf.set("hive.mapred.mode", "nonstrict")
 		spark.conf.set("hive.exec.dynamic.partition.mode", "nonstrict")
 		spark.conf.set("hive.exec.dynamic.partition", "true")
 		spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
 		spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
-		val table_name = "dsmsca_staging.ip_doms_inventory_daily_base_t"
+		val table_name = "dsmsca_processed.inventory_pipeline_sc_agg"
+		val model_type="LIR"
 		val canary_value=args(0)
 		var query_condition=args(1)
+
+		val conf: Config = ConfigFactory.load("application.conf")
+		val settings: Settings = new Settings(conf)
+		println (s"Settings.configTable")
+		//val config = ConfigFactory.load("dq_framework.conf").getConfig("config.table")
+
+		//val config_table_name = config.getString(BatchConstants.GET_TABLE_NAME)
+		val config_table_name=settings.configTable
+
 		var id=""
 		if (query_condition != "Y"){
-		    id = s"""select distinct id from dev_eda_common.eda_quality_framework_config_ddb where table_name='${table_name}' and canary_flag='$canary_value' and length(trim(query)) =0 """
+		    id = s"""select distinct id from dev_eda_common.$config_table_name where table_name='${table_name}' and canary_flag='$canary_value' and length(trim(query)) =0 """
 		}
 		else{
-		    id = s"""select distinct id from dev_eda_common.eda_quality_framework_config_ddb where table_name='${table_name}' and canary_flag='$canary_value' and length(trim(query)) >0"""
+		    id = s"""select distinct id from dev_eda_common.$config_table_name where table_name='${table_name}' and canary_flag='$canary_value' and length(trim(query)) >0"""
 		}
-		print ("\n query_condition is :"+id)
+		log.info(s"query used to get id : $id")
 		var src_tbl = spark.sql(id)
 		src_tbl.cache()
 		val df1 = src_tbl.rdd.collect()
+		println (s"\nIDs are $df1 ")
 		if (df1.length ==0){
 				println ("NO IDS for the table")
 				System.exit(1)
 		}
 		val dag_exec_dt="2020-08-17"
-		var  environment="dq_check_noquery"
-		if (canary_value =="N" && query_condition.length !=0){
-			environment="dq_check_query";
+		var  dq_check_type="dq_check_noquery"
+		println(canary_value)
+		println(query_condition)
+		println (s"canary_value is $canary_value and query_condition is $query_condition")
+		log.info(s"canary_value is $canary_value and query_condition is $query_condition")
+		if (canary_value =="N" && query_condition =="Y"){
+			dq_check_type="dq_check_query";
 		}
-		if (canary_value =="Y" && query_condition.length !=0){
-			environment="canary_query";
+		if (canary_value =="Y" && query_condition =="Y"){
+			dq_check_type="canary_query";
 		}
-		if (canary_value =="Y" && query_condition.length ==0){
-			environment="canary_noquery";
+		if (canary_value =="Y" && (query_condition.length ==0 || query_condition =="N")){
+			dq_check_type="canary_noquery";
 		}
-		println(df1)
-		println(s"""ENVIRONMENT IS $environment""")
+		// Initialize and cache the AuditMetricTable
+		var audit_metric_table=cacheAuditMetricTable(spark,"dev_eda_common.mpa_audit_metric_table")
+		audit_metric_table.cache()
+		println(s"""dq_check_type IS $dq_check_type""")
 
 		src_tbl.show()
 
-		var (df,df_result)=initialize_dataframe(spark,environment)
-		if (environment=="dq_check_noquery" || environment=="canary_noquery"){
-		    df_result=qa_framework_transform.non_query_condition_transform(spark,environment,df,src_tbl,dag_exec_dt)
+		var (df,df_result)=initialize_dataframe(spark,dq_check_type)
+		if (dq_check_type=="dq_check_noquery" || dq_check_type=="canary_noquery"){
+
+		    df_result=qa_framework_transform.non_query_condition_transform(spark,dq_check_type,df,src_tbl,dag_exec_dt,model_type,audit_metric_table)
 		}
 		else{
-		    df_result=qa_framework_transform.query_condition_transform(spark,environment,id,dag_exec_dt)
+		    df_result=qa_framework_transform.query_condition_transform(spark,dq_check_type,id,dag_exec_dt,config_table_name)
 		}
-    df_result.write.partitionBy("team_name","environment","process_dt","table_name").mode("overwrite").parquet("s3://zz-testing/jcher2/qa_testing/")
+    df_result.write.partitionBy("team_name","dq_check_type","process_dt","table_name").mode("overwrite").parquet("s3://zz-testing/jcher2/qa_testing/")
 	}
 
 }

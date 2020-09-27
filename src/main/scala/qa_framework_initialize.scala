@@ -22,4 +22,21 @@ object qa_framework_initialize {
         log.info(s"Initializing the dataframe")
         return (df,df_result)
     }
+    def initializeMlDf(spark:SparkSession,id:String,table_name:String,dag_exec_dt:String):(DataFrame)={
+        var query=s"""select '$table_name' as table_name,
+                        '$id' as id,
+                        '$dag_exec_dt' as process_dt,
+                        0 as kpi_val,
+                        0.0 as variance ,
+                        0.0 as variance_percentage"""
+        var df=spark.sql(query)
+        return df
+
+    }
+    def cacheAuditMetricTable(spark:SparkSession,audit_table:String):DataFrame = {
+        var audit_metric_table=spark.sql(s"""select * from $audit_table""")
+        audit_metric_table.cache()
+        audit_metric_table.show()
+        return audit_metric_table
+    }
 }

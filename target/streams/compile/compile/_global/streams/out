@@ -1,4 +1,2 @@
-[0m[[0m[31merror[0m] [0m[0m/Users/jcher2/Documents/jerry_git/dq_framework/src/main/scala/qa_framework_main.scala:19:39: unclosed character literal[0m
-[0m[[0m[31merror[0m] [0m[0m		spark.sparkContext.setLogLevel('WARN')[0m
-[0m[[0m[31merror[0m] [0m[0m		                                    ^[0m
-[0m[[0m[31merror[0m] [0m[0mone error found[0m
+[0m[[0m[33mwarn[0m] [0m[0mthere were two deprecation warnings; re-run with -deprecation for details[0m
+[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m
