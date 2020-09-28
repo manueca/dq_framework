@@ -53,14 +53,15 @@ object qa_framework_transform{
                   kpi_val_df.registerTempTable("kpi_val_df")
                   println("Displaying output of kpi_val_df")
                   kpi_val_df.show()
-
-                  if (model_type.length()==0){
+                  println (s"""model_type is $model_type""")
+                  if (model_type.length()!=0){
                      ml_df = mlTransformIds(spark,kpi_val_df)
+                     println ("Inside ML transforms")
                   }
                   var ml_result_temp=ml_df.collect()
                   var ml_result=ml_result_temp(0)
                   var kpi_forecast=ml_result(3)
-                  log.info(s"kpi_forecast is $kpi_forecast")
+                  println(s"kpi_forecast is $kpi_forecast")
                   var actual_variance=ml_result(4)
                   log.info(s"actual_variance is $actual_variance")
                   var variance_percentage=ml_result(5)
@@ -92,7 +93,8 @@ object qa_framework_transform{
                               $kpi_avg as kpi_avg"""
                   var df_temp=spark.sql(final_query)
                   df_temp.registerTempTable("df_temp")
-                  var df_final_temp=statusCalculation(spark,query_temp,df_temp,kpi_val_df,model_type)
+
+                  var df_final_temp=statusCalculation(spark,query_temp,df_temp,kpi_val_df,model_type,ml_df)
 
                   print ("\n printing the final query ")
                   if (i==0){

@@ -48,9 +48,11 @@ object qaFrameWorkMl {
       //var ml= new LinearRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
 
       case class LabeledDocument(table_name:String,id: String, process_dt: String, label: Double)
-      var query=s"""select table_name,id,process_dt,cast(kpi_val as double) as label
+      /*var query=s"""select table_name,id,process_dt,cast(kpi_val as double) as label
                                   from dev_eda_common.mpa_audit_metric_table
                                   where table_name='$table_name' and id='$id' """
+			*/
+			var query=("""select distinct id,process_dt ,cast(kpi_val as double) as label from kpi_val_df""")
       val training = spark.sql(query)
       //training.as[LabeledDocument]
       val indexed = DateIndexer.fit(training).transform(training)
@@ -101,8 +103,11 @@ object qaFrameWorkMl {
                                   left outer join final_df b
                                   on a.id=b.id
                                   and a.process_dt=b.process_dt
-                                  where table_name='$table_name' and a.id='$id' and a.process_dt='$dag_exec_dt'"""
+                                  where table_name='$table_name' and a.id='$id'"""
       var df=spark.sql(query)
+			println ("""Printing Schema of ML dataframe""")
+			df.printSchema()
+			df.show()
       return df
   }
 

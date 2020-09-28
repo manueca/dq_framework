@@ -201,11 +201,13 @@ object qa_framework_functions {
 												 query_temp:String,
 												 df_temp:DataFrame,
 												 kpi_val_df:DataFrame,
-												 model_type:String) :
+												 model_type:String,
+												 ml_df:DataFrame) :
 												 DataFrame  = {
 			println ("Printing dataframe outcomes")
 			df_temp.show()
 			kpi_val_df.show()
+			var df_final=spark.sql("""select 'test'""")
 			df_temp.registerTempTable("df_temp")
 			kpi_val_df.registerTempTable("kpi_val_df")
 			var query_temp=s"""select
@@ -219,16 +221,53 @@ object qa_framework_functions {
 	                    a.environment,
 	                    a.dq_check_type,
 	                    a.team_name,
+											a.kpi_avg,
 	                    b.process_dt,
 	                    a.table_name,
-	                    case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 > cast(variance_tolerance_limit as double) then 'SUCCESS'
+	                    case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 < cast(variance_tolerance_limit as double) then 'SUCCESS'
 	                         else 'FAILED'
 	                         end as status
 	                    from df_temp a
-	                    left outer join kpi_val_df b
+	                    full outer join kpi_val_df b
 	                    on a.id=b.id"""
+			var df_final_temp=spark.sql(query_temp)
+			df_final_temp.registerTempTable("df_final_temp")
+
+			df_final_temp.show()
 			println(s"""Query is : $query_temp""")
-	    var df_final_temp=spark.sql(query_temp)
-			return df_final_temp
+			if (model_type.length()!=0){
+					ml_df.registerTempTable("ml_df")
+					println(s"""ML dataframe is shown below""")
+					ml_df.show()
+					ml_df.printSchema()
+					query_temp=s"""select
+			                    a.id,
+			                    a.full_tbl_scan,
+			                    a.variance_tolerance_limit,
+			                    a.kpi_val,
+			                    a.condition_to_check,
+			                    a.partition_col_nm,
+			                    a.parent_id,
+			                    a.environment,
+			                    a.dq_check_type,
+			                    a.team_name,
+													a.kpi_avg,
+			                    b.process_dt,
+			                    a.table_name,
+			                    case when  cast(variance_percentage as double) < cast(variance_tolerance_limit as double) then 'SUCCESS'
+			                         else 'FAILED'
+			                         end as status
+			                    from df_final_temp a
+			                    full outer join ml_df b
+			                    on a.id=b.id
+													and a.process_dt=b.process_dt"""
+					df_final=spark.sql(query_temp)
+			}
+			else{
+			df_final=df_final_temp
+			}
+			println ("Final query printing")
+			df_final.show(100,false)
+			return df_final
 	}
 }
