@@ -224,9 +224,13 @@ object qa_framework_functions {
 											a.kpi_avg,
 	                    b.process_dt,
 	                    a.table_name,
+											0.0 as forecast_val,
 	                    case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 < cast(variance_tolerance_limit as double) then 'SUCCESS'
 	                         else 'FAILED'
-	                         end as status
+	                         end as status,
+										 case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 < cast(variance_tolerance_limit as double) then 'SUCCESS'
+													else 'FAILED DUE TO VARIANCE WITH AVERAGE'
+													end as reason_for_failure
 	                    from df_temp a
 	                    full outer join kpi_val_df b
 	                    on a.id=b.id"""
@@ -254,13 +258,18 @@ object qa_framework_functions {
 													a.kpi_avg,
 			                    b.process_dt,
 			                    a.table_name,
+													coalece(b.forecast_val,0.0) as forecast_val,
 			                    case when  cast(variance_percentage as double) < cast(variance_tolerance_limit as double) then 'SUCCESS'
 			                         else 'FAILED'
-			                         end as status
+			                         end as status,
+												 case when  cast(variance_percentage as double) < cast(variance_tolerance_limit as double) then 'SUCCESS'
+															else 'FAILED DUE TO VARIANCE WITH ML MODEL RUN'
+															end as reason_for_failure
 			                    from df_final_temp a
 			                    full outer join ml_df b
 			                    on a.id=b.id
-													and a.process_dt=b.process_dt"""
+													and a.process_dt=b.process_dt
+													where a.id IS NOT NULL and b.process_dt is NOT NULL """
 					df_final=spark.sql(query_temp)
 			}
 			else{

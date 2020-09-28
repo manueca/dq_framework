@@ -55,7 +55,7 @@ object qa_framework_transform{
                   kpi_val_df.show()
                   println (s"""model_type is $model_type""")
                   if (model_type.length()!=0){
-                     ml_df = mlTransformIds(spark,kpi_val_df)
+                     ml_df = mlTransformIds(spark,kpi_val_df,dag_exec_dt,id,audit_metric_table)
                      println ("Inside ML transforms")
                   }
                   var ml_result_temp=ml_df.collect()
