@@ -12,20 +12,22 @@ object qa_framework_transform{
     val log = Logger.getLogger(getClass.getName)
     log.info(s"Inside the transforms")
     println (s"Inside the transforms")
+
     def non_query_condition_transform(spark:SparkSession,
                                       dq_check_type:String,
                                       df_init:DataFrame,
                                       src_arg:DataFrame,
                                       dag_exec_dt:String,
                                       model_type:String,
-                                      audit_metric_table:DataFrame) : DataFrame ={
+                                      audit_metric_table:DataFrame,
+                                      settings:Settings) : DataFrame ={
         val df1 = src_arg.rdd.collect()
         var df=df_init
         for(i <- 0 until df1.length)
             {
                 var id=df1(i).mkString(",")
                 print ("\n id: "+id)
-                var result_set=qualityParameterExtraction(spark,id,dag_exec_dt,audit_metric_table)
+                var result_set=qualityParameterExtraction(spark,id,dag_exec_dt,audit_metric_table,settings)
 
                 var season_flg=result_set._1
                 var query=result_set._2

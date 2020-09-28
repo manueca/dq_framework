@@ -37,6 +37,7 @@ object qa_framework_initialize {
         var audit_metric_table=spark.sql(s"""select * from $audit_table""")
         audit_metric_table.cache()
         audit_metric_table.show()
+        audit_metric_table.printSchema()
         return audit_metric_table
     }
 }

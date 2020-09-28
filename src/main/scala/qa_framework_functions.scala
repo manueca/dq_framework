@@ -63,6 +63,7 @@ object qa_framework_functions {
 									id:String,
 									dag_exec_dt:String,
 									audit_metric_table:DataFrame) : Double ={
+		audit_metric_table.registerTempTable("audit_metric_table")
 		var kpi_avg=0
 		var ret_kpi_avg=0.0
 		print ("\n before check ")
@@ -102,9 +103,30 @@ object qa_framework_functions {
 		return ret_kpi_avg
 	}
 
-	def qualityParameterExtraction( spark:SparkSession,id:String ,dag_exec_dt:String,audit_metric_table:DataFrame) : (String, String, String, String, String, String, String, String, String, String, String,String,String)  = {
-	 	val reslt_without_query=spark.sql(s"""select coalesce(table_name,''),
-	 												 coalesce(season_flag,''),
+	def qualityParameterExtraction( spark:SparkSession,id:String ,
+																	dag_exec_dt:String,
+																	audit_metric_table:DataFrame,
+																	settings:Settings) :
+																	(String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String,
+																	String)  = {
+		audit_metric_table.registerTempTable("audit_metric_table")
+		val config_table_name=settings.configTable
+		val database_name=settings.configDatabase
+
+		spark.sql(s"""select * from $config_table_name""").printSchema()
+		val reslt_without_query=spark.sql(s"""select coalesce(table_name,''),
+	 												 coalesce(season_flag,'') as season_flag,
 	 												 coalesce(kpi,''),
 	 												 coalesce(environment,''),
 	 												 coalesce(full_tbl_scan,''),
@@ -115,7 +137,7 @@ object qa_framework_functions {
 	 												 coalesce(query,''),
 	 												 coalesce(parent_id,''),
 	 												 coalesce(team_name,'')
-	 										from audit_metric_table
+	 										from $database_name.$config_table_name
 	 										where id='$id'""").collect()
 
 		println (reslt_without_query)
