@@ -45,14 +45,17 @@ object qa_framework_transform{
                 print ("\n Season_flg: "+season_flg)
                 print ("\n canary_flag is :"+canary_flag)
                 print ("\n query_temp is :"+query_temp,query_temp.trim.length)
+                print ("\n environment is :"+environment)
 
                 var ml_df=initializeMlDf(spark,id,table_name,dag_exec_dt)
                 if (query_temp.trim.length ==0){
                   var kpi_val_df : DataFrame= getKpiValueNew(spark,query,environment)
                   kpi_val_df.registerTempTable("kpi_val_df")
+                  println("Displaying output of kpi_val_df")
+                  kpi_val_df.show()
 
                   if (model_type.length()==0){
-                     ml_df = mlTransformIds(spark)
+                     ml_df = mlTransformIds(spark,kpi_val_df)
                   }
                   var ml_result_temp=ml_df.collect()
                   var ml_result=ml_result_temp(0)
@@ -77,38 +80,20 @@ object qa_framework_transform{
                   print (s"""condition_to_check_temp is $condition_to_check_temp""")
                   var final_query=s"""select '$id' as id,
                               '$full_tbl_scan' as full_tbl_scan,
-                              '$variance_tolerance_limit' as variance_tolerance_limit,
+                               $variance_tolerance_limit as variance_tolerance_limit,
                               '$condition_to_check_temp' as condition_to_check,
                               '$partition_col_nm' as partition_col_nm,
                               '$parent_id' as parent_id,
                               '$environment' as environment,
                               '$dq_check_type' as dq_check_type,
                               '$team_name' as team_name,
-                              '$dag_exec_dt' as process_dt,
                               '$table_name' as table_name,
-                              '$status' as status"""
+                              '$model_type' as model_type,
+                              $kpi_avg as kpi_avg"""
                   var df_temp=spark.sql(final_query)
                   df_temp.registerTempTable("df_temp")
-                  var df_final_temp=spark.sql(s"""select
-                                                    a.id,
-                                                    a.full_tbl_scan,
-                                                    a.variance_tolerance_limit,
-                                                    b.kpi_val,
-                                                    a.condition_to_check_temp,
-                                                    a.partition_col_nm,
-                                                    a.parent_id,
-                                                    a.environment,
-                                                    a.dq_check_type,
-                                                    a.team_name,
-                                                    b.process_dt,
-                                                    a.table_name,
-                                                    a.status
-                                                    from df_temp a
-                                                    left outer join kpi_val_df b
-                                                    on a.id=b.id
-                                                    and a.process_dt=b.process_dt
-                                                    """
-                                                    )
+                  var df_final_temp=statusCalculation(spark,query_temp,df_temp,kpi_val_df,model_type)
+
                   print ("\n printing the final query ")
                   if (i==0){
                      df = df_final_temp

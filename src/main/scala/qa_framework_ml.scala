@@ -39,7 +39,7 @@ object qaFrameWorkMl {
       return ml
 
   }
-	def mlTransformIds(spark:SparkSession): DataFrame = {
+	def mlTransformIds(spark:SparkSession,kpi_val_df:DataFrame): DataFrame = {
       var model_type="GBT"
       val id="a20191108181137_62bf55ca_e21e_460a_a1z";
       val dag_exec_dt="2020-07-01"
@@ -84,7 +84,9 @@ object qaFrameWorkMl {
       import spark.implicits._
       case class Document(id: String, process_dt: String)
       //val test = spark.sparkContext.parallelize(Seq(Document(s"$id", s"$dag_exec_dt")))
-      val test = Seq((s"$id", s"$dag_exec_dt")).toDF("id", "process_dt")
+      //val test = Seq((s"$id", s"$dag_exec_dt")).toDF("id", "process_dt")
+			kpi_val_df.registerTempTable("kpi_val_df")
+			var test = spark.sql("""select distinct id,process_dt from kpi_val_df""")
       var final_df=model.transform(test)
       final_df.show()
       final_df.registerTempTable("final_df")
@@ -92,6 +94,7 @@ object qaFrameWorkMl {
                           a.id,
                           a.process_dt,
                           cast(kpi_val as double) as label,
+													prediction as forecast_val,
                           prediction-cast(kpi_val as double) as variance ,
                           ((prediction-cast(kpi_val as double))/kpi_val)*100 as variance_percentage
                                   from dev_eda_common.mpa_audit_metric_table a

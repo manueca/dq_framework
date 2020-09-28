@@ -10,6 +10,7 @@ object qa_framework_functions {
 
 	def getKpiValue(spark:SparkSession,query:String,environment:String) : Double ={
 		var df_val=0.0
+		println ("environment is "+environment)
 		if (environment.toLowerCase()=="hive"){
 			var df_val=spark.sql(query).first().getAs[Double](0)
 		}else{
@@ -20,9 +21,9 @@ object qa_framework_functions {
 	def getKpiValueNew(spark:SparkSession,query:String,environment:String) : DataFrame ={
 		var df_val=spark.sql(s"""select 'test'""")
 		if (environment.toLowerCase()=="hive"){
-			var df_val=spark.sql(query)
+			df_val=spark.sql(query)
 		}else{
-			var df_val=spark.sql(query)
+			df_val=spark.sql(query)
 		}
 		return df_val
 	}
@@ -124,7 +125,7 @@ object qa_framework_functions {
 		val config_table_name=settings.configTable
 		val database_name=settings.configDatabase
 
-		spark.sql(s"""select * from $config_table_name""").printSchema()
+		spark.sql(s"""select * from $database_name.$config_table_name""").printSchema()
 		val reslt_without_query=spark.sql(s"""select coalesce(table_name,''),
 	 												 coalesce(season_flag,'') as season_flag,
 	 												 coalesce(kpi,''),
@@ -163,27 +164,29 @@ object qa_framework_functions {
 	 	print ("\n  full_tbl_scan IS :"+full_tbl_scan)
 	 	if (full_tbl_scan=='Y'){
 			df=spark.sql(s"""select * from $table_name""").cache()
+			df.registerTempTable("df")
 	 		query = s"""select '$id' as id,'$dag_exec_dt' as process_dt, cast("+kpi+" as double) as kpi_val from df"""
 	 	}else{
 			df=spark.sql(s"""select * from $table_name where $partition_col_nm >='$dag_exec_dt'""").cache()
+			df.registerTempTable("df")
 		}
 
 	 	if (condition_to_check.length >1 && partition_col_nm.length <=0 && full_tbl_scan !='Y' ) {
 
-	 		query = "select '$id' as id,'$dag_exec_dt' as process_dt,cast("+kpi+" as double) as kpi_val  from df where "+condition_to_check
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val  from df where $condition_to_check group by $partition_col_nm"""
 	 		print ("\n  inside where condition to check \n")
 	 		}
 	 	print ("partition_col_nm.length :"+partition_col_nm.length ,"full_tbl_scan:"+full_tbl_scan)
 
 	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length >1 ){
 
-	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val from df where $condition_to_check and $partition_col_nm = '$dag_exec_dt'"""
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val from df where $condition_to_check and $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm """
 	 		print ("\n  inside where condition to check and partition column condition \n")
 
 	 	}
 	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length <=0 ){
 
-	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast("+kpi+"  as double) as kpi_val from $table_name where  $partition_col_nm = '$dag_exec_dt'"""
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi  as double) as kpi_val from $table_name where  $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm"""
 	 		print ("\n  inside partition column condition \n")
 	 	}
 	 	else{
@@ -193,4 +196,39 @@ object qa_framework_functions {
 	 	}
 		 return (season_flag,query,table_name,kpi,full_tbl_scan,canary_flag,variance_tolerance_limit,condition_to_check,partition_col_nm,query_temp,parent_id,environment,team_name)
 		}
+
+	def statusCalculation( spark:SparkSession ,
+												 query_temp:String,
+												 df_temp:DataFrame,
+												 kpi_val_df:DataFrame,
+												 model_type:String) :
+												 DataFrame  = {
+			println ("Printing dataframe outcomes")
+			df_temp.show()
+			kpi_val_df.show()
+			df_temp.registerTempTable("df_temp")
+			kpi_val_df.registerTempTable("kpi_val_df")
+			var query_temp=s"""select
+	                    a.id,
+	                    a.full_tbl_scan,
+	                    a.variance_tolerance_limit,
+	                    b.kpi_val,
+	                    a.condition_to_check,
+	                    a.partition_col_nm,
+	                    a.parent_id,
+	                    a.environment,
+	                    a.dq_check_type,
+	                    a.team_name,
+	                    b.process_dt,
+	                    a.table_name,
+	                    case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 > cast(variance_tolerance_limit as double) then 'SUCCESS'
+	                         else 'FAILED'
+	                         end as status
+	                    from df_temp a
+	                    left outer join kpi_val_df b
+	                    on a.id=b.id"""
+			println(s"""Query is : $query_temp""")
+	    var df_final_temp=spark.sql(query_temp)
+			return df_final_temp
+	}
 }

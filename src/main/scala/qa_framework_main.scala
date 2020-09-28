@@ -1,4 +1,5 @@
-//spark-submit --deploy-mode cluster --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0,com.typesafe:config:1.2.1  --class "qa_framework_main" qaframework_2.11-1.0.11.jar Y N
+//aws s3 cp s3://zz-testing/jcher2/qaframework_2.11-1.0.11.jar
+//spark-submit --deploy-mode cluster --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0,com.typesafe:config:1.2.1  --class "qa_framework_main" qaframework_2.11-1.0.11.jar Y N dev
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
@@ -71,7 +72,7 @@ object qa_framework_main {
 			dq_check_type="canary_noquery";
 		}
 		// Initialize and cache the AuditMetricTable
-		var audit_metric_table=cacheAuditMetricTable(spark,s"$database_name.mpa_audit_metric_table")
+		var audit_metric_table=cacheAuditMetricTable(spark,s"$database_name.mpa_audit_metric_table",table_name)
 		audit_metric_table.cache()
 		println(s"""dq_check_type IS $dq_check_type""")
 
@@ -81,6 +82,9 @@ object qa_framework_main {
 		if (dq_check_type=="dq_check_noquery" || dq_check_type=="canary_noquery"){
 
 		    df_result=qa_framework_transform.non_query_condition_transform(spark,dq_check_type,df,src_tbl,dag_exec_dt,model_type,audit_metric_table,settings)
+				println ("Printing the final data frame results")
+				df_result.cache()
+				df_result.show()
 		}
 		else{
 		    df_result=qa_framework_transform.query_condition_transform(spark,dq_check_type,id,dag_exec_dt,config_table_name)

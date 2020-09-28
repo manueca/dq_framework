@@ -33,8 +33,11 @@ object qa_framework_initialize {
         return df
 
     }
-    def cacheAuditMetricTable(spark:SparkSession,audit_table:String):DataFrame = {
-        var audit_metric_table=spark.sql(s"""select * from $audit_table""")
+    def cacheAuditMetricTable(spark:SparkSession,audit_table:String,table_name:String):DataFrame = {
+        var query=s"""select * from $audit_table where table_name='$table_name'"""
+        println(s"""query to select the audit metric table is :$query""")
+        var audit_metric_table=spark.sql(query)
+        println("Showing audit metric table")
         audit_metric_table.cache()
         audit_metric_table.show()
         audit_metric_table.printSchema()
