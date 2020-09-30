@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Tue Sep 29 23:12:49 PDT 2020:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0174-dda4-59fe-00001e38ad50 
+on database directory /Users/jcher2/Documents/jerry_git/dq_framework/metastore_db with class loader org.apache.spark.sql.hive.client.IsolatedClientLoader$$anon$1@63b2b92c 
+Loaded from file:/Users/jcher2/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_261-b12
+user.dir=/Users/jcher2/Documents/jerry_git/dq_framework
+os.name=Mac OS X
+os.arch=x86_64
+os.version=10.14.6
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

@@ -4,6 +4,9 @@ import org.apache.spark.sql.DataFrame
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.types.{StringType, LongType, StructField, StructType,DoubleType,IntegerType}
+import org.apache.spark.sql.Row
+
 
 object qa_framework_functions {
 	val log = Logger.getLogger(getClass.getName)
@@ -165,7 +168,7 @@ object qa_framework_functions {
 	 	if (full_tbl_scan=='Y'){
 			df=spark.sql(s"""select * from $table_name""").cache()
 			df.registerTempTable("df")
-	 		query = s"""select '$id' as id,'$dag_exec_dt' as process_dt, cast("+kpi+" as double) as kpi_val from df"""
+	 		query = s"""select '$id' as id,'$dag_exec_dt' as process_dt, cast(sum("+kpi+") as double) as kpi_val from df"""
 	 	}else{
 			df=spark.sql(s"""select * from $table_name where $partition_col_nm >='$dag_exec_dt'""").cache()
 			df.registerTempTable("df")
@@ -173,20 +176,20 @@ object qa_framework_functions {
 
 	 	if (condition_to_check.length >1 && partition_col_nm.length <=0 && full_tbl_scan !='Y' ) {
 
-	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val  from df where $condition_to_check group by $partition_col_nm"""
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast(sum($kpi) as double) as kpi_val  from df where $condition_to_check group by $partition_col_nm"""
 	 		print ("\n  inside where condition to check \n")
 	 		}
 	 	print ("partition_col_nm.length :"+partition_col_nm.length ,"full_tbl_scan:"+full_tbl_scan)
 
 	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length >1 ){
 
-	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi as double) as kpi_val from df where $condition_to_check and $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm """
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast(sum($kpi) as double) as kpi_val from df where $condition_to_check and $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm """
 	 		print ("\n  inside where condition to check and partition column condition \n")
 
 	 	}
 	 	if (partition_col_nm.length >1 && full_tbl_scan !="Y" && condition_to_check.length <=0 ){
 
-	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast($kpi  as double) as kpi_val from $table_name where  $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm"""
+	 		query = s"""select '$id' as id,$partition_col_nm as process_dt,cast(sum($kpi)  as double) as kpi_val from $table_name where  $partition_col_nm >= '$dag_exec_dt' group by $partition_col_nm"""
 	 		print ("\n  inside partition column condition \n")
 	 	}
 	 	else{
@@ -211,19 +214,19 @@ object qa_framework_functions {
 			df_temp.registerTempTable("df_temp")
 			kpi_val_df.registerTempTable("kpi_val_df")
 			var query_temp=s"""select
-	                    a.id,
-	                    a.full_tbl_scan,
-	                    a.variance_tolerance_limit,
-	                    b.kpi_val,
-	                    a.condition_to_check,
-	                    a.partition_col_nm,
-	                    a.parent_id,
-	                    a.environment,
-	                    a.dq_check_type,
-	                    a.team_name,
-											a.kpi_avg,
-	                    b.process_dt,
-	                    a.table_name,
+	                    coalesce(a.id,'0000') as id ,
+	                    coalesce(a.full_tbl_scan,'N') as full_tbl_scan,
+	                    coalesce(a.variance_tolerance_limit,'100') as variance_tolerance_limit ,
+	                    coalesce(b.kpi_val,0) as kpi_val ,
+	                    coalesce(a.condition_to_check,'') as condition_to_check,
+	                    coalesce(a.partition_col_nm,'') as partition_col_nm,
+	                    coalesce(a.parent_id,'') as parent_id,
+	                    coalesce(a.environment,'') as environment,
+	                    coalesce(a.dq_check_type,'') as dq_check_type,
+	                    coalesce(a.team_name,'') as team_name,
+											coalesce(a.kpi_avg,'') as kpi_avg,
+	                    coalesce(b.process_dt,'') as process_dt,
+	                    coalesce(a.table_name,'') as table_name,
 											0.0 as forecast_val,
 	                    case when length(trim(model_type))==0 and ((cast(b.kpi_val as double)- cast(a.kpi_avg as double))/cast(b.kpi_val as double))*100 < cast(variance_tolerance_limit as double) then 'SUCCESS'
 	                         else 'FAILED'
@@ -245,20 +248,20 @@ object qa_framework_functions {
 					ml_df.show()
 					ml_df.printSchema()
 					query_temp=s"""select
-			                    a.id,
-			                    a.full_tbl_scan,
-			                    a.variance_tolerance_limit,
-			                    a.kpi_val,
-			                    a.condition_to_check,
-			                    a.partition_col_nm,
-			                    a.parent_id,
-			                    a.environment,
-			                    a.dq_check_type,
-			                    a.team_name,
-													a.kpi_avg,
-			                    b.process_dt,
-			                    a.table_name,
-													coalece(b.forecast_val,0.0) as forecast_val,
+			                    coalesce(a.id,'0000') as id,
+			                    coalesce(a.full_tbl_scan,'N') as full_tbl_scan,
+			                    coalesce(a.variance_tolerance_limit,'') as variance_tolerance_limit,
+			                    cast(coalesce(a.kpi_val,0.0) as double) as kpi_val,
+			                    coalesce(a.condition_to_check,'') as condition_to_check,
+			                    coalesce(a.partition_col_nm,'') as partition_col_nm,
+			                    coalesce(a.parent_id,'') as parent_id,
+			                    coalesce(a.environment,'') as environment,
+			                    coalesce(a.dq_check_type,'') as dq_check_type,
+			                    coalesce(a.team_name,'') as team_name,
+													coalesce(a.kpi_avg,'') as kpi_avg,
+			                    coalesce(a.process_dt,'') as process_dt,
+			                    coalesce(a.table_name,'') as table_name,
+													cast(coalesce(b.forecast_val,0.0) as double)  as forecast_val,
 			                    case when  cast(variance_percentage as double) < cast(variance_tolerance_limit as double) then 'SUCCESS'
 			                         else 'FAILED'
 			                         end as status,
@@ -269,8 +272,9 @@ object qa_framework_functions {
 			                    full outer join ml_df b
 			                    on a.id=b.id
 													and a.process_dt=b.process_dt
-													where a.id IS NOT NULL and b.process_dt is NOT NULL """
+													where a.id IS NOT NULL and a.process_dt is NOT NULL """
 					df_final=spark.sql(query_temp)
+					df_final.show(100,false)
 			}
 			else{
 			df_final=df_final_temp
@@ -279,4 +283,25 @@ object qa_framework_functions {
 			df_final.show(100,false)
 			return df_final
 	}
+/*
+	def schemaGenerator(spark:SparkSession,types: Array[String], cols: Array[String]) :StructType =  {
+		val datatypes = types.map {
+		  case "String" => StringType
+		  case "Long" => LongType
+		  case "Double" => DoubleType
+		  case "Int" => IntegerType
+		  // Add more types here based on your data.
+		  case _ => StringType
+		}
+		return StructType(cols.indices.map(x => StructField(cols(x), datatypes(x))).toArray)
+	}
+
+	def dataframeGenerator(spark:SparkSession,schema:StructType,data:Array[String]) : DataFrame ={
+
+		val expectedDF = spark.createDataFrame(
+		  spark.sparkContext.parallelize(data),schema)
+		return expectedDF
+	}
+	*/
+
 }

@@ -1,20 +1,37 @@
-[0m[[0m[0mdebug[0m] [0m[0mjavaOptions: Vector(-Xms512M, -Xmx2048M, -XX:+CMSClassUnloadingEnabled)[0m
-[0m[[0m[0mdebug[0m] [0m[0mForking tests - parallelism = false[0m
-[0m[[0m[0mdebug[0m] [0m[0mCreate a single-thread test executor[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunner for org.scalatest.tools.Framework produced 2 initial tasks for 2 tests.[0m
-[0m[[0m[0mdebug[0m] [0m[0m  Running TaskDef(CalculatorSpec, sbt.ForkMain$SubclassFingerscan@38957fe5, false, [SuiteSelector])[0m
-[0m[[0m[0minfo[0m] [0m[0m[32mCalculatorSpec:[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[32m- adds two numbers (10 milliseconds)[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0m    Produced 0 nested tasks and 1 events.[0m
-[0m[[0m[0mdebug[0m] [0m[0m  Running TaskDef(Testqa_framework_functions, sbt.ForkMain$SubclassFingerscan@28553208, false, [SuiteSelector])[0m
-[0m[[0m[0minfo[0m] [0m[0m[32mTestqa_framework_functions:[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[32m- Calculate status test (3 milliseconds)[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0m    Produced 0 nested tasks and 1 events.[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 2 seconds, 437 milliseconds.[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 2[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 2, aborted 0[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 2, failed 0, canceled 0, ignored 0, pending 0[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[32mAll tests passed.[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mPassed tests:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Testqa_framework_functions[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CalculatorSpec[0m
+[debug] javaOptions: Vector()
+[debug] Forking tests - parallelism = false
+[debug] Create a single-thread test executor
+[debug] Runner for org.scalatest.tools.Framework produced 4 initial tasks for 4 tests.
+[debug]   Running TaskDef(Testqa_framework_functions, sbt.ForkMain$SubclassFingerscan@2a9fe008, false, [SuiteSelector])
+[info] Testqa_framework_functions:
+[info] - Calculate status test (13 milliseconds)
+[debug]     Produced 0 nested tasks and 1 events.
+[debug]   Running TaskDef(ConverterSpec, sbt.ForkMain$SubclassFingerscan@a421fbe, false, [SuiteSelector])
+[info] ConverterSpec:
+[info] .snakecaseify
+[info] - downcases uppercase letters (6 milliseconds)
+[info] - converts spaces to underscores (0 milliseconds)
+[info] .snakeCaseColumns
+[info] - snake_cases the column names of a DataFrame (2 seconds, 979 milliseconds)
+[debug]     Produced 0 nested tasks and 3 events.
+[debug]   Running TaskDef(CalculatorSpec, sbt.ForkMain$SubclassFingerscan@68d38cdf, false, [SuiteSelector])
+[info] CalculatorSpec:
+[info] - adds two numbers (0 milliseconds)
+[debug]     Produced 0 nested tasks and 1 events.
+[debug]   Running TaskDef(qa_framework_functionsSpec, sbt.ForkMain$SubclassFingerscan@53a8f56d, false, [SuiteSelector])
+[info] qa_framework_functionsSpec:
+[info] .getKpiValueNew
+[info] - get the data from audit metric table (6 seconds, 911 milliseconds)
+[info] .statusCalculation
+[info] - Calculating the status for a specific metric (8 seconds, 418 milliseconds)
+[debug]     Produced 0 nested tasks and 2 events.
+[info] Run completed in 22 seconds, 503 milliseconds.
+[info] Total number of tests run: 7
+[info] Suites: completed 4, aborted 0
+[info] Tests: succeeded 7, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[debug] Passed tests:
+[debug] 	Testqa_framework_functions
+[debug] 	CalculatorSpec
+[debug] 	ConverterSpec
+[debug] 	qa_framework_functionsSpec

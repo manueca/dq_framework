@@ -1,5 +1,6 @@
 //aws s3 cp s3://zz-testing/jcher2/qaframework_2.11-1.0.11.jar
-//spark-submit --deploy-mode cluster --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0,com.typesafe:config:1.2.1  --class "qa_framework_main" qaframework_2.11-1.0.11.jar Y N dev
+//spark-submit --deploy-mode cluster --packages net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.11:2.2.8,com.amazon.emr:emr-dynamodb-hadoop:4.6.0,com.amazon.emr:emr-dynamodb-hive:4.8.0,com.typesafe:config:1.2.1,MrPowers:spark-fast-tests:0.20.0-s_2.12 --conf "spark.sql.crossJoin.enabled=true" --class "qa_framework_main" qaframework_2.11-1.0.11.jar Y N dev
+//spark-shell --packages org.scalatest:scalatest_2.13:3.2.2,com.holdenkarau:spark-testinge_2.12:2.4.5_0.14.0
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame

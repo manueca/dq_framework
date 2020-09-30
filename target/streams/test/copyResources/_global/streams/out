@@ -1,2 +1,2 @@
-[0m[[0m[0mdebug[0m] [0m[0mCopy resource mappings: [0m
-[0m[[0m[0mdebug[0m] [0m[0m	[0m
+[debug] Copy resource mappings: 
+[debug] 	(/Users/jcher2/Documents/jerry_git/dq_framework/src/test/resources/df_final_expected.parquet,/Users/jcher2/Documents/jerry_git/dq_framework/target/scala-2.11/test-classes/df_final_expected.parquet)

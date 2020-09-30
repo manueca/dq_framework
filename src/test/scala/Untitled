@@ -1,0 +1,70 @@
+
+/*
+  val df_final_expected_data = Seq(
+    ("a20191219225319_bcaec291_a48e_4dd9_b0z",
+    "N",
+    "10",
+    72.0,
+    "",
+    "process_dt",
+    "",
+    "hive",
+    "canary_noquery",
+    "dsm",
+    "71",
+    "2020-01-01",
+    "test")
+  )
+  val df_final_expected_schema = List(
+    StructField("id", StringType, false),
+    StructField("full_table_scan", StringType, false),
+    StructField("variance_tolerance_limit", StringType, false),
+    StructField("kpi_val", DoubleType, false),
+    StructField("condition_to_check", StringType, false),
+    StructField("partition_col_nm", StringType, false),
+    StructField("parent_id", StringType, false),
+    StructField("environment", StringType, false),
+    StructField("dq_check_type", StringType, false),
+    StructField("team_name", StringType, false),
+    StructField("kpi_avg", StringType, false),
+    StructField("process_dt", StringType, false),
+    StructField("table_name", StringType, false)
+  )
+
+  val df_final_expected_df= spark.createDataFrame(
+    spark.sparkContext.parallelize(df_final_expected_data),
+    StructType(df_final_expected_schema)
+  )
+
+*/
+
+val df_final_expected_df= (Seq(
+  ("a20191219225319_bcaec291_a48e_4dd9_b0z","N", "10",72.0,"","process_dt","","hive",
+  "canary_noquery","dsm","71","2020-01-01","test",0.0,"SUCCESS","")
+).toDF("id","full_table_scan","variance_tolerance_limit", "kpi_val",
+  "condition_to_check","partition_col_nm","parent_id","environment","dq_check_type",
+  "team_name","kpi_avg","process_dt","table_name","forecast_val","status","reason_for_failure"))
+
+describe(".statusCalculation") {
+
+  it("Calculating the status for a specific metric") {
+
+    val actualDF = qa_framework_functions.statusCalculation(spark,
+                                                            query_temp,
+                                                            df_temp,
+                                                            kpi_val_df_expected_df,
+                                                            model_type,ml_df)
+
+    assertSmallDataFrameEquality(actualDF, df_final_expected_df)
+
+  }
+
+}
+
+
+
+
+
+StructType(StructField(id,StringType,true), StructField(full_tbl_scan,StringType,true), StructField(variance_tolerance_limit,StringType,true), StructField(kpi_val,StringType,true), StructField(condition_to_check,StringType,true), StructField(partition_col_nm,StringType,true), StructField(parent_id,StringType,true), StructField(environment,StringType,true), StructField(dq_check_type,StringType,true), StructField(team_name,StringType,true), StructField(kpi_avg,StringType,true), StructField(process_dt,StringType,true), StructField(table_name,StringType,true), StructField(forecast_val,StringType,true), StructField(status,StringType,true), StructField(reason_for_failure,StringType,true))
+
+StructType(StructField(id,StringType,false), StructField(full_tbl_scan,StringType,false), StructField(variance_tolerance_limit,StringType,false), StructField(kpi_val,StringType,false), StructField(condition_to_check,StringType,false), StructField(partition_col_nm,StringType,false), StructField(parent_id,StringType,false), StructField(environment,StringType,false), StructField(dq_check_type,StringType,false), StructField(team_name,StringType,false), StructField(kpi_avg,StringType,false), StructField(process_dt,StringType,false), StructField(table_name,StringType,false), StructField(forecast_val,DecimalType(11,1),false), StructField(status,StringType,false), StructField(reason_for_failure,StringType,false)

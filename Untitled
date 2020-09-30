@@ -1,1 +1,0 @@
-case class LabeledDocument(id: String, process_dt: String, kpi_val: Double)
